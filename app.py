@@ -17,16 +17,17 @@ load_dotenv()
 app = Flask(__name__)
 
 OPENWEBNINJA_API_KEY = os.getenv("OPENWEBNINJA_API_KEY")
+DEMO_SEARCH_URL = ""
 
 THRESHOLD = 0.363
 
 # Public image URL already tested successfully with OpenWebNinja.
 # This is ONLY the demo search source.
-DEMO_SEARCH_URL = "https://i.imgur.com/HBrB8p0.png"
+
 
 BLOCKCHAIN_RPC = "http://127.0.0.1:8545"
 
-CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+CONTRACT_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
 
 # ============================================================
 # LOAD FACE MODELS
@@ -160,6 +161,17 @@ def download_image(url):
     except Exception as e:
         print("⚠️ Image download error:", e)
         return None
+def upload_to_img402(file_path):
+    with open(file_path, "rb") as f:
+        response = requests.post(
+            "https://img402.dev/api/free",
+            files={"file": f},
+            timeout=30
+        )
+
+    response.raise_for_status()
+
+    return response.json()["url"]
 
 
 # ============================================================
@@ -196,7 +208,9 @@ def reverse_image_search(image_url):
             return []
 
         data = response.json()
-
+        print("🔎 API response type:", type(data))
+        print("🔎 API response keys:", data.keys() if isinstance(data, dict) else "NOT DICT")
+        print("🔎 DATA TYPE:", type(data.get("data")) if isinstance(data, dict) else "N/A")
         results = data.get("data", [])
 
         print("🔎 Reverse search results:", len(results))
@@ -349,17 +363,7 @@ HTML = """
             required
         >
 
-        <label>
-            2️⃣ Public Image URL for Reverse Search
-        </label>
-
-        <input
-            type="text"
-            name="search_url"
-            value="{{ demo_url }}"
-            required
-        >
-
+       
         <button type="submit">
             🔎 Find Social Media & Verify
         </button>
@@ -516,7 +520,7 @@ def home():
     return render_template_string(
         HTML,
         result=None,
-        demo_url=DEMO_SEARCH_URL
+        demo_url=""
     )
 
 
@@ -541,7 +545,8 @@ def verify():
         "timestamp": None
     }
 
-    # --------------------------------------------------------
+   
+ # --------------------------------------------------------
     # 1. GET UPLOADED PHOTO
     # --------------------------------------------------------
 
@@ -554,9 +559,8 @@ def verify():
         return render_template_string(
             HTML,
             result=result,
-            demo_url=DEMO_SEARCH_URL
+            demo_url=""
         )
-
 
     # --------------------------------------------------------
     # 2. READ PHOTO
@@ -581,7 +585,7 @@ def verify():
         return render_template_string(
             HTML,
             result=result,
-            demo_url=DEMO_SEARCH_URL
+            demo_url=""
         )
 
 
@@ -602,34 +606,39 @@ def verify():
         return render_template_string(
             HTML,
             result=result,
-            demo_url=DEMO_SEARCH_URL
+            demo_url=""
         )
 
     print("✅ Face detected")
 
-
+# --------------------------------------------------------
+    # 4. UPLOAD IMAGE FOR REVERSE SEARCH
     # --------------------------------------------------------
-    # 4. GET SEARCH URL
-    # --------------------------------------------------------
 
-    search_url = request.form.get(
-        "search_url",
-        ""
-    ).strip()
+    try:
+        temp_path = "uploaded_search_image.jpg"
 
-    if not search_url:
+        with open(temp_path, "wb") as f:
+            f.write(image_bytes)
+
+        search_url = upload_to_img402(temp_path)
+
+        print("🔎 Searching uploaded image:", search_url)
+
+    except Exception as e:
 
         result["message"] = (
-            "Please provide a public image URL for reverse search."
+            "Could not upload the image for reverse search."
         )
+
+        print("❌ Reverse search upload error:", e)
 
         return render_template_string(
             HTML,
             result=result,
-            demo_url=DEMO_SEARCH_URL
+            demo_url=""
         )
 
-    print("🔎 Searching:", search_url)
 
 
     # --------------------------------------------------------
@@ -652,7 +661,7 @@ def verify():
         return render_template_string(
             HTML,
             result=result,
-            demo_url=DEMO_SEARCH_URL
+            demo_url=""
         )
 
 
@@ -732,7 +741,7 @@ def verify():
         return render_template_string(
             HTML,
             result=result,
-            demo_url=DEMO_SEARCH_URL
+            demo_url=""
         )
 
 
@@ -816,7 +825,7 @@ def verify():
         return render_template_string(
             HTML,
             result=result,
-            demo_url=DEMO_SEARCH_URL
+            demo_url=""
         )
 
 
@@ -912,7 +921,7 @@ def verify():
     return render_template_string(
         HTML,
         result=result,
-        demo_url=DEMO_SEARCH_URL
+        demo_url=""
     )
 
 

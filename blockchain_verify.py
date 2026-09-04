@@ -12,7 +12,7 @@ print("Blockchain connected:", w3.is_connected())
 
 
 # Your deployed contract
-CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+CONTRACT_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
 
 
 # Load contract ABI
@@ -60,10 +60,32 @@ receipt = w3.eth.wait_for_transaction_receipt(tx)
 tx_hash = receipt["transactionHash"].hex()
 
 print("Transaction:", tx_hash)
+print("Transaction status:", receipt["status"])
+print("Block:", receipt["blockNumber"])
 
+# Re-create the contract object after the transaction
+contract = w3.eth.contract(
+    address=Web3.to_checksum_address(CONTRACT_ADDRESS),
+    abi=contract_data["abi"]
+)
 
-# Read the record back from blockchain
 record = contract.functions.verifyFace(account).call()
+
+stored_hash = record[0]
+verified = record[1]
+timestamp = record[2]
+
+print()
+print("Stored hash:", stored_hash)
+print("Verified:", verified)
+print("Timestamp:", timestamp)
+
+if stored_hash == post_hash and verified:
+    print()
+    print("✅ BLOCKCHAIN VERIFICATION SUCCESS")
+else:
+    print()
+    print("❌ BLOCKCHAIN VERIFICATION FAILED")
 
 stored_hash = record[0]
 verified = record[1]
